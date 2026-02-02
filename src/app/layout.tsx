@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,25 +22,27 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <nav className="border-b border-[var(--border)] bg-[var(--card)]">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-8">
-            <Link href="/" className="font-semibold text-lg">
-              Kapas 6th sense
-            </Link>
-            <div className="flex gap-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="px-3 py-2 rounded-md text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
+        <Providers>
+          <nav className="border-b border-[var(--border)] bg-[var(--card)]">
+            <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-8">
+              <Link href="/" className="font-semibold text-lg">
+                Kapas 6th sense
+              </Link>
+              <div className="flex gap-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="px-3 py-2 rounded-md text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--border)] transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        </nav>
-        <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+          </nav>
+          <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+        </Providers>
       </body>
     </html>
   );
