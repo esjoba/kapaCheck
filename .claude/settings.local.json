@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s \"C:\\\\Users\\\\EsbenJørgensenBager\\\\OneDrive - Leapwork\\\\Esben Personal\\\\Git\\\\kapaCheck\\\\src\")",
+      "Bash(git config:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
