@@ -2,6 +2,7 @@
 
 import { useAppStore, LinearIssue } from "@/store/AppContext";
 import { textSimilarity } from "@/lib/similarity";
+import { LinearIssueLink } from "@/components/LinearIssueLink";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 
@@ -194,9 +195,7 @@ export default function LinearPage() {
                   <td className="px-4 py-3">
                     {item.linearIssue ? (
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-[var(--primary)]">
-                          {item.linearIssue.id}
-                        </span>
+                        <LinearIssueLink issueId={item.linearIssue.id} title={item.linearIssue.title} />
                         <span
                           className="text-sm truncate max-w-[200px]"
                           title={item.linearIssue.title}
@@ -312,9 +311,7 @@ export default function LinearPage() {
                       className="w-full text-left border border-[var(--border)] rounded-lg p-3 hover:bg-[var(--border)]/50 transition-colors"
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-xs text-[var(--primary)]">
-                          {issue.id}
-                        </span>
+                        <LinearIssueLink issueId={issue.id} title={issue.title} />
                         {issue.status && (
                           <span className="text-xs bg-[var(--border)] px-1.5 py-0.5 rounded text-[var(--muted)]">
                             {issue.status}

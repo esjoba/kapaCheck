@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/store/AppContext";
+import { LinearIssueLink } from "@/components/LinearIssueLink";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 
@@ -273,9 +274,7 @@ export default function ConsolidationPage() {
 
                           <td className="px-4 py-3 align-top">
                             <div className="flex items-start gap-2">
-                              <span className="font-mono text-xs text-[var(--primary)] whitespace-nowrap">
-                                {pair.issueA.id}
-                              </span>
+                              <LinearIssueLink issueId={pair.issueA.id} title={pair.issueA.title} className="whitespace-nowrap" />
                               <span
                                 className="text-sm line-clamp-2"
                                 title={pair.issueA.title}
@@ -292,9 +291,7 @@ export default function ConsolidationPage() {
 
                           <td className="px-4 py-3 align-top">
                             <div className="flex items-start gap-2">
-                              <span className="font-mono text-xs text-[var(--primary)] whitespace-nowrap">
-                                {pair.issueB.id}
-                              </span>
+                              <LinearIssueLink issueId={pair.issueB.id} title={pair.issueB.title} className="whitespace-nowrap" />
                               <span
                                 className="text-sm line-clamp-2"
                                 title={pair.issueB.title}

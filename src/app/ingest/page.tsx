@@ -2,6 +2,7 @@
 
 import { useAppStore, LinearIssue, SlackMessage } from "@/store/AppContext";
 import { parseLinearCSV } from "@/lib/csvParser";
+import { LinearIssueLink } from "@/components/LinearIssueLink";
 import { useState, useRef } from "react";
 
 interface LinearExportIssue {
@@ -387,9 +388,7 @@ export default function IngestPage() {
             <div className="space-y-1">
               {linearIssues.slice(0, 3).map((issue) => (
                 <div key={issue.id} className="text-sm text-[var(--muted)] truncate">
-                  <span className="text-[var(--foreground)] font-mono text-xs mr-2">
-                    {issue.id}
-                  </span>
+                  <LinearIssueLink issueId={issue.id} title={issue.title} className="mr-2" />
                   {issue.title}
                 </div>
               ))}

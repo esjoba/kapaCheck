@@ -2,6 +2,7 @@
 
 import { useAppStore, LinearIssue } from "@/store/AppContext";
 import { findSimilarIssues } from "@/lib/similarity";
+import { LinearIssueLink } from "@/components/LinearIssueLink";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 
@@ -233,7 +234,7 @@ export default function ReviewPage() {
                 <div className="flex gap-2">
                   {linkedIssue && (
                     <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded">
-                      Linked to {linkedIssue.id}
+                      Linked to <LinearIssueLink issueId={linkedIssue.id} title={linkedIssue.title} className="text-blue-400" />
                     </span>
                   )}
                   {currentMessage?.reviewed && (
@@ -358,9 +359,7 @@ export default function ReviewPage() {
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-mono text-xs text-[var(--primary)]">
-                                    {issue.id}
-                                  </span>
+                                  <LinearIssueLink issueId={issue.id} title={issue.title} />
                                   <span className="text-xs bg-[var(--primary)]/20 text-[var(--primary)] px-1.5 py-0.5 rounded">
                                     {score.toFixed(2)}
                                   </span>
@@ -408,9 +407,7 @@ export default function ReviewPage() {
                                 className="w-full text-left border border-[var(--border)] rounded-lg p-2 hover:bg-[var(--border)]/50 transition-colors"
                               >
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono text-xs text-[var(--primary)]">
-                                    {issue.id}
-                                  </span>
+                                  <LinearIssueLink issueId={issue.id} title={issue.title} />
                                 </div>
                                 <p className="text-xs text-[var(--foreground)] mt-1 line-clamp-1">
                                   {issue.title}

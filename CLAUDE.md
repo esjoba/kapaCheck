@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kapas 6th sense is a Next.js app for daily actions for Product @ kapa. It provides three main workflows: data ingestion, feedback review, and Linear updates.
+Kapas 6th Sense is a Next.js app for daily Product actions at kapa. It helps link Slack customer feedback to Linear issues using text similarity matching. The app has four main workflows:
+
+1. **Ingest Data** - Import Linear issues and Slack messages
+2. **Review Feedback** - Process messages with AI-suggested issue matches
+3. **Consolidation Opportunities** - Find duplicate/similar Linear issues
+4. **Update Linear** - Manage and review all message-to-issue links
 
 ## Development Commands
 
@@ -25,13 +30,50 @@ npm run lint     # Run ESLint
 ## Architecture
 
 ```
-src/app/
-├── layout.tsx      # Root layout with navigation
-├── page.tsx        # Home page
-├── globals.css     # Global styles and CSS variables
-├── ingest/         # Data ingestion page
-├── review/         # Feedback review page
-└── linear/         # Linear updates page
+src/
+├── app/
+│   ├── layout.tsx           # Root layout with navigation
+│   ├── page.tsx             # Home page
+│   ├── globals.css          # Global styles and CSS variables
+│   ├── providers.tsx        # React context providers
+│   ├── ingest/              # Data ingestion page
+│   ├── review/              # Feedback review page
+│   ├── consolidation/       # Consolidation opportunities page
+│   ├── linear/              # Update Linear page
+│   └── api/
+│       └── consolidation-opportunities/  # API for pairwise similarity
+├── components/
+│   └── LinearIssueLink.tsx  # Clickable Linear issue ID component
+├── lib/
+│   ├── similarity.ts        # TF-IDF cosine similarity functions
+│   ├── csvParser.ts         # Linear CSV import parser
+│   └── linearUrl.ts         # Linear URL generation utility
+└── store/
+    └── AppContext.tsx       # React Context state with localStorage
 ```
 
-The app uses CSS variables for theming (defined in `globals.css`) with a dark color scheme.
+## State Management
+
+The app uses React Context (`AppContext`) with localStorage persistence. State includes:
+- `linearIssues` - Array of Linear issues (id, title, description, status)
+- `slackMessages` - Array of Slack messages (id, rawText, parsed fields, reviewed status)
+- `mappings` - Links between Slack messages and Linear issues
+
+## Key Algorithms
+
+### Text Similarity (`lib/similarity.ts`)
+- Tokenization with stopword removal
+- Term frequency calculation
+- Cosine similarity between TF vectors
+- Used for both Slack→Linear matching and consolidation
+
+### Consolidation Optimization
+- Brute force for ≤400 issues
+- Token bucketing for larger datasets (compares only issues sharing 2+ top tokens)
+
+## Theming
+
+The app uses CSS variables for theming (defined in `globals.css`) with a dark color scheme. Key variables:
+- `--background`, `--foreground` - Main colors
+- `--card`, `--border`, `--muted` - UI elements
+- `--primary`, `--primary-hover` - Accent colors

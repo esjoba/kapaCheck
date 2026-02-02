@@ -4,9 +4,34 @@ A tool for daily Product actions at kapa. Link Slack feedback to Linear issues w
 
 ## Features
 
-- **Ingest Data**: Upload Linear issues (CSV or JSON) and paste Slack messages
-- **Review Feedback**: Card-based review with similarity-based suggestions, manual search, and "Create new idea" for novel feedback
-- **Update Linear**: Table view of all messages with linking status, change/unlink actions, and summary stats
+### Ingest Data
+- Upload Linear issues from CSV or JSON exports
+- Paste Slack messages with automatic field parsing (WHO, TOPIC, ISSUE/REQUEST)
+- Supports both Slack API JSON format and plain text input
+
+### Review Feedback
+- Card-based review interface for processing Slack messages one at a time
+- Similarity-based suggestions showing top 3 matching Linear issues
+- Manual search across all Linear issues
+- "Create new idea" option for novel feedback (creates LOCAL-xxx placeholder)
+- Mark messages as reviewed, filter by review status
+
+### Consolidation Opportunities
+- Find similar Linear issues that might be duplicates
+- Adjustable similarity threshold (0.3-0.9)
+- Token bucketing optimization for large datasets (>400 issues)
+- Expandable descriptions for side-by-side comparison
+
+### Update Linear
+- Table view of all messages with linking status
+- Change or unlink issue associations
+- Summary stats: total, linked, unlinked counts
+- Confidence scores for each link
+
+### Clickable Issue IDs
+- All Linear issue IDs link directly to Linear
+- URL format: `https://linear.app/kapa/issue/{ID}/{slug}`
+- Local placeholder issues show as plain text
 
 ## Getting Started
 
@@ -23,3 +48,4 @@ Open [http://localhost:3000](http://localhost:3000)
 - React 19 + TypeScript
 - Tailwind CSS v4
 - Client-side state with localStorage persistence
+- TF-IDF cosine similarity for text matching
