@@ -1,1 +1,1 @@
-# kapaCheck
+# Aiming to build a simple app for daily actions for Product @ kapa
