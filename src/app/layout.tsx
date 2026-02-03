@@ -13,6 +13,7 @@ const navItems = [
   { href: "/review", label: "Review new feedback" },
   { href: "/consolidation", label: "Consolidation opportunities" },
   { href: "/linear", label: "Update Linear" },
+  { href: "/insights", label: "Insights" },
 ];
 
 export default function RootLayout({
