@@ -41,12 +41,14 @@ src/
 │   ├── consolidation/       # Consolidation opportunities page
 │   ├── linear/              # Update Linear page
 │   └── api/
-│       └── consolidation-opportunities/  # API for pairwise similarity
+│       ├── consolidation-opportunities/  # API for pairwise similarity
+│       ├── linear-export/   # Fetch FEED issues from Linear API
+│       └── slack-export/    # Fetch messages from Slack API
 ├── components/
 │   └── LinearIssueLink.tsx  # Clickable Linear issue ID component
 ├── lib/
 │   ├── similarity.ts        # TF-IDF cosine similarity functions
-│   ├── csvParser.ts         # Linear CSV import parser
+│   ├── csvParser.ts         # Linear CSV import parser (supports both formats)
 │   └── linearUrl.ts         # Linear URL generation utility
 └── store/
     └── AppContext.tsx       # React Context state with localStorage
@@ -70,6 +72,23 @@ The app uses React Context (`AppContext`) with localStorage persistence. State i
 ### Consolidation Optimization
 - Brute force for ≤400 issues
 - Token bucketing for larger datasets (compares only issues sharing 2+ top tokens)
+
+## API Integrations
+
+### Linear API (`/api/linear-export`)
+- Fetches FEED team issues updated in the past 12 months
+- Exports to CSV with: identifier, title, description, status, team, creator, assignee, priority, labels, customerCount, customers, customerRequests, dates, url
+- Requires Linear API key (from Linear Settings → API)
+
+### Slack API (`/api/slack-export`)
+- Fetches messages from #kapa-customer-feedback channel
+- Configurable date range (default: last 24 hours)
+- Requires Bot Token with scopes: `channels:read`, `channels:history` (or `groups:*` for private channels)
+
+### CSV Parser (`lib/csvParser.ts`)
+- Auto-detects format from headers
+- Supports both manual Linear export (ID column) and API export (identifier column)
+- Header-based column mapping for flexibility
 
 ## Theming
 

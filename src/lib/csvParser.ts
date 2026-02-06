@@ -1,11 +1,5 @@
 import { LinearIssue } from "@/store/AppContext";
 
-// Linear CSV column indices
-const COL_ID = 0;
-const COL_TITLE = 2;
-const COL_DESCRIPTION = 3;
-const COL_STATUS = 4;
-
 /**
  * Parse a CSV line handling quoted fields with commas and newlines
  * Returns null if the line is incomplete (unclosed quote)
@@ -60,9 +54,55 @@ function parseCSVLine(line: string): string[] | null {
   return fields;
 }
 
+interface ColumnMapping {
+  id: number;
+  title: number;
+  description: number;
+  status: number;
+}
+
+/**
+ * Detect column mapping from header row
+ * Supports both manual Linear export and API-generated CSV formats
+ */
+function detectColumnMapping(headers: string[]): ColumnMapping | null {
+  const lowerHeaders = headers.map((h) => h.toLowerCase().trim());
+
+  // API format: identifier, title, description, status, ...
+  const identifierIdx = lowerHeaders.indexOf("identifier");
+  if (identifierIdx !== -1) {
+    return {
+      id: identifierIdx,
+      title: lowerHeaders.indexOf("title"),
+      description: lowerHeaders.indexOf("description"),
+      status: lowerHeaders.indexOf("status"),
+    };
+  }
+
+  // Manual Linear export format: ID is first column, Title is 3rd (index 2)
+  // Headers typically: ID, Priority, Title, Description, Status, ...
+  const idIdx = lowerHeaders.findIndex((h) => h === "id");
+  if (idIdx !== -1) {
+    const titleIdx = lowerHeaders.indexOf("title");
+    const descIdx = lowerHeaders.indexOf("description");
+    const statusIdx = lowerHeaders.indexOf("status");
+
+    // If we found title by name, use it; otherwise fall back to position 2
+    return {
+      id: idIdx,
+      title: titleIdx !== -1 ? titleIdx : 2,
+      description: descIdx !== -1 ? descIdx : 3,
+      status: statusIdx !== -1 ? statusIdx : 4,
+    };
+  }
+
+  return null;
+}
+
 /**
  * Parse Linear CSV export into LinearIssue array
- * Handles multiline descriptions and edge cases
+ * Handles both manual Linear export and API-generated CSV formats
+ * Also handles multiline descriptions and edge cases
  */
 export function parseLinearCSV(csvContent: string): LinearIssue[] {
   const results: LinearIssue[] = [];
@@ -72,15 +112,16 @@ export function parseLinearCSV(csvContent: string): LinearIssue[] {
     return results;
   }
 
-  // Verify header row
+  // Parse and detect header format
   const headerLine = lines[0];
   const headers = parseCSVLine(headerLine);
-  if (!headers || !headers[COL_ID]?.includes("ID")) {
-    // Try to detect if it's a valid Linear CSV
-    const lowerHeaders = headers?.map((h) => h.toLowerCase()) || [];
-    if (!lowerHeaders.includes("id") && !lowerHeaders.some((h) => h.includes("title"))) {
-      return results;
-    }
+  if (!headers) {
+    return results;
+  }
+
+  const mapping = detectColumnMapping(headers);
+  if (!mapping || mapping.id === -1 || mapping.title === -1) {
+    return results;
   }
 
   let currentLine = "";
@@ -108,8 +149,8 @@ export function parseLinearCSV(csvContent: string): LinearIssue[] {
     currentLine = "";
 
     // Check if this looks like a valid issue row
-    const id = fields[COL_ID]?.trim();
-    const title = fields[COL_TITLE]?.trim();
+    const id = fields[mapping.id]?.trim();
+    const title = fields[mapping.title]?.trim();
 
     // Valid row should have an ID that looks like an issue identifier
     // Linear IDs are typically like "ENG-123", "PROJ-45", etc.
@@ -124,14 +165,21 @@ export function parseLinearCSV(csvContent: string): LinearIssue[] {
       pendingIssue = {
         id,
         title,
-        description: fields[COL_DESCRIPTION]?.trim() || undefined,
-        status: fields[COL_STATUS]?.trim() || undefined,
+        description:
+          mapping.description !== -1
+            ? fields[mapping.description]?.trim() || undefined
+            : undefined,
+        status:
+          mapping.status !== -1
+            ? fields[mapping.status]?.trim() || undefined
+            : undefined,
       };
     } else if (pendingIssue) {
       // This row doesn't look like a new issue
       // It might be a continuation of the previous description or garbage
       // Check if it has meaningful content in what would be the description column
-      const possibleDescContinuation = fields[COL_DESCRIPTION]?.trim();
+      const possibleDescContinuation =
+        mapping.description !== -1 ? fields[mapping.description]?.trim() : null;
       if (possibleDescContinuation && !looksLikeIssueId) {
         // Append to previous issue's description
         pendingIssue.description = pendingIssue.description
@@ -154,11 +202,11 @@ export function parseLinearCSV(csvContent: string): LinearIssue[] {
  * Detect if content is CSV format
  */
 export function isCSVFormat(content: string): boolean {
-  const firstLine = content.split("\n")[0];
-  // Check if first line looks like Linear CSV header
+  const firstLine = content.split("\n")[0].toLowerCase();
+  // Check if first line looks like Linear CSV header (either format)
   return (
-    firstLine.includes("ID") &&
-    firstLine.includes("Title") &&
+    (firstLine.includes("id") || firstLine.includes("identifier")) &&
+    firstLine.includes("title") &&
     firstLine.includes(",")
   );
 }

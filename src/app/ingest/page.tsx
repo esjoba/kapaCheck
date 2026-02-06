@@ -247,10 +247,105 @@ export default function IngestPage() {
   const [slackError, setSlackError] = useState<string | null>(null);
   const [showAllMessages, setShowAllMessages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [linearApiKey, setLinearApiKey] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [slackToken, setSlackToken] = useState("");
+  const [isSlackFetching, setIsSlackFetching] = useState(false);
+  const [slackFetchError, setSlackFetchError] = useState<string | null>(null);
+  const [slackSinceDate, setSlackSinceDate] = useState(() => {
+    // Default to 24 hours ago
+    const date = new Date();
+    date.setHours(date.getHours() - 24);
+    return date.toISOString().split("T")[0];
+  });
 
   const handleReset = () => {
     resetAllData();
     setShowConfirm(false);
+  };
+
+  const handleLinearExport = async () => {
+    if (!linearApiKey.trim()) {
+      setExportError("Please enter your Linear API key");
+      return;
+    }
+
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      const response = await fetch("/api/linear-export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ apiKey: linearApiKey.trim() }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to export issues");
+      }
+
+      // Download the CSV file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `linear-feed-issues-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Export failed");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleSlackFetch = async () => {
+    if (!slackToken.trim()) {
+      setSlackFetchError("Please enter your Slack Bot Token");
+      return;
+    }
+
+    setIsSlackFetching(true);
+    setSlackFetchError(null);
+
+    try {
+      const response = await fetch("/api/slack-export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: slackToken.trim(),
+          since: slackSinceDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch messages");
+      }
+
+      if (!data.messages || data.messages.length === 0) {
+        setSlackFetchError("No messages found in the channel");
+        return;
+      }
+
+      // Parse the messages using the existing parser
+      const messages = parseSlackMessages(JSON.stringify(data.messages));
+      setSlackMessages(messages);
+      setShowAllMessages(false);
+    } catch (error) {
+      setSlackFetchError(error instanceof Error ? error.message : "Fetch failed");
+    } finally {
+      setIsSlackFetching(false);
+    }
   };
 
   const processFile = async (file: File) => {
@@ -347,6 +442,55 @@ export default function IngestPage() {
       {/* Linear Export Upload */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Linear Export</h2>
+
+        {/* Fetch from Linear API */}
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <h3 className="font-medium">Fetch from Linear API</h3>
+          <p className="text-sm text-[var(--muted)]">
+            Pull all FEED issues updated in the past 12 months directly from Linear.
+            Get your API key from{" "}
+            <a
+              href="https://linear.app/settings/api"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--primary)] hover:underline"
+            >
+              Linear Settings → API
+            </a>
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="password"
+              value={linearApiKey}
+              onChange={(e) => setLinearApiKey(e.target.value)}
+              placeholder="lin_api_..."
+              className="flex-1 px-3 py-2 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--primary)] font-mono text-sm"
+            />
+            <button
+              onClick={handleLinearExport}
+              disabled={isExporting}
+              className="px-4 py-2 text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors whitespace-nowrap"
+            >
+              {isExporting ? "Exporting..." : "Export CSV"}
+            </button>
+          </div>
+          {exportError && (
+            <p className="text-red-500 text-sm">{exportError}</p>
+          )}
+        </div>
+
+        {/* Or upload existing file */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[var(--border)]"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-[var(--background)] px-2 text-[var(--muted)]">
+              or upload existing file
+            </span>
+          </div>
+        </div>
+
         <div
           onClick={() => fileInputRef.current?.click()}
           onDrop={handleDrop}
@@ -404,7 +548,75 @@ export default function IngestPage() {
 
       {/* Slack Messages */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Paste Slack Messages</h2>
+        <h2 className="text-lg font-semibold">Slack Messages</h2>
+
+        {/* Fetch from Slack API */}
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <h3 className="font-medium">Fetch from Slack API</h3>
+          <p className="text-sm text-[var(--muted)]">
+            Pull messages from #kapa-customer-feedback.
+            Get your Bot Token from{" "}
+            <a
+              href="https://api.slack.com/apps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--primary)] hover:underline"
+            >
+              Slack App Settings → OAuth & Permissions
+            </a>
+          </p>
+          <p className="text-xs text-[var(--muted)]">
+            Required scopes: <code className="bg-[var(--border)] px-1 rounded">channels:read</code>{" "}
+            <code className="bg-[var(--border)] px-1 rounded">channels:history</code>{" "}
+            (or <code className="bg-[var(--border)] px-1 rounded">groups:read</code>{" "}
+            <code className="bg-[var(--border)] px-1 rounded">groups:history</code> for private channels)
+          </p>
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="block text-xs text-[var(--muted)] mb-1">Bot Token</label>
+              <input
+                type="password"
+                value={slackToken}
+                onChange={(e) => setSlackToken(e.target.value)}
+                placeholder="xoxb-..."
+                className="w-full px-3 py-2 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--primary)] font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--muted)] mb-1">Messages since</label>
+              <input
+                type="date"
+                value={slackSinceDate}
+                onChange={(e) => setSlackSinceDate(e.target.value)}
+                max={new Date().toISOString().split("T")[0]}
+                className="px-3 py-2 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)] text-sm"
+              />
+            </div>
+            <button
+              onClick={handleSlackFetch}
+              disabled={isSlackFetching}
+              className="px-4 py-2 text-sm bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors whitespace-nowrap"
+            >
+              {isSlackFetching ? "Fetching..." : "Fetch Messages"}
+            </button>
+          </div>
+          {slackFetchError && (
+            <p className="text-red-500 text-sm">{slackFetchError}</p>
+          )}
+        </div>
+
+        {/* Or paste manually */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[var(--border)]"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-[var(--background)] px-2 text-[var(--muted)]">
+              or paste manually
+            </span>
+          </div>
+        </div>
+
         <p className="text-sm text-[var(--muted)]">
           Paste messages separated by blank lines, or paste Slack API JSON output.
           Lines starting with <code className="bg-[var(--border)] px-1 rounded">WHO:</code>, <code className="bg-[var(--border)] px-1 rounded">TOPIC:</code>, <code className="bg-[var(--border)] px-1 rounded">ISSUE:</code>, or <code className="bg-[var(--border)] px-1 rounded">REQUEST:</code> will be parsed as fields.
